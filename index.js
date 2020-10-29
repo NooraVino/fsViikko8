@@ -121,8 +121,8 @@ const resolvers = {
   Query: {
     bookCount: () => books.length,
     authorCount: () => authors.length,
-    allBooks: (root, args) => books.filter(book => book.author === args.author || book.genres.includes(args.genre)),
-    allAuthors: () => authors.map(element => ({booksByAuthor: books.filter(book => element.name === book.author).length ,...element}))
+    allBooks: (root, args) => books, //books.filter(book => book.author === args.author || book.genres.includes(args.genre)),
+    allAuthors: () => authors.map(element => ({ booksByAuthor: books.filter(book => element.name === book.author).length, ...element }))
   },
   Book: {
     author: (root) => {
@@ -134,16 +134,24 @@ const resolvers = {
   },
   Mutation: {
     addBook: (root, args) => {
+
+      if (!authors.find(author => author.name === args.author)) {
+        const author = { name: args.author, id: uuid() }
+        authors = authors.concat(author)
+      }
       const book = { ...args, id: uuid() }
       books = books.concat(book)
+
       return book
-    }
+
+    },
+
   }
 
 
 }
 
-books.map(b=>b.author==="Robin Martin")
+
 
 const server = new ApolloServer({
   typeDefs,
