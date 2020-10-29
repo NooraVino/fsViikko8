@@ -127,7 +127,21 @@ const resolvers = {
   Query: {
     bookCount: () => books.length,
     authorCount: () => authors.length,
-    allBooks: (root, args) => books, //books.filter(book => book.author === args.author || book.genres.includes(args.genre)),
+    allBooks: (root, args) => {
+      if (args.author && !args.genre){
+        const booksByAuthor = books.filter(book => book.author === args.author )
+        return booksByAuthor
+      }
+      if (args.genre && !args.author) {
+        const booksByGenre = books.filter(book => book.genres.includes(args.genre))
+        return booksByGenre
+      }
+      if (args.author && args.author) {
+        const booksByAuthorAndGenre = books.filter(book => book.author === args.author ).filter(book => book.genres.includes(args.genre))
+        return booksByAuthorAndGenre
+      }
+      return books
+       },
     allAuthors: () => authors.map(element => ({ booksByAuthor: books.filter(book => element.name === book.author).length, ...element }))
   },
   Book: {
