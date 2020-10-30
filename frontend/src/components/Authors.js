@@ -21,11 +21,11 @@ const Authors = (props) => {
               books
             </th>
           </tr>
-          {authors.map(a =>
+          {props.authors.map(a =>
             <tr key={a.name}>
               <td>{a.name}</td>
               <td>{a.born}</td>
-              <td>{a.bookCount}</td>
+              <td>{a.booksByAuthor}</td>
             </tr>
           )}
         </tbody>
