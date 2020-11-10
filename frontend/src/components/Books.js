@@ -1,12 +1,23 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {ALL_BOOKS} from '../queries'
-import {useQuery } from '@apollo/client'
+import {useQuery, useLazyQuery } from '@apollo/client'
+
 
 const Books = (props) => {
-
-  const result = useQuery(ALL_BOOKS)
-
-  if (result.loading) {
+  const [filteredBooks, result] = useLazyQuery(ALL_BOOKS) 
+  const [filter, setFilter] = useState([])
+  const result2 = useQuery(ALL_BOOKS)
+  
+ 
+   useEffect(() => {
+    if (result.data) {
+      setFilter(result.data.allBooks)
+      console.log(filter)
+    }
+   }, [result])
+  
+ 
+  if (filter.loading) {
     return <div>loading...</div>
   }
 
@@ -14,8 +25,17 @@ const Books = (props) => {
     return null
   }
 
-  const books = result.data.allBooks
+  const handleFilter = async (event, genre) => {
+    event.preventDefault()
+    filteredBooks({ variables: genre? { genre: genre } : {}})
+    console.log(genre)
+  }
 
+  const books = result2.data.allBooks
+ 
+  const genres = [...new Set(books.map(b => b.genres).flat())]
+ 
+  
   return (
     <div>
       <h2>books</h2>
@@ -31,15 +51,38 @@ const Books = (props) => {
               published
             </th>
           </tr>
-          {books.map(a =>
+          {filter.map(a =>
             <tr key={a.title}>
               <td>{a.title}</td>
               <td>{a.author.name}</td>
               <td>{a.published}</td>
+              <td>{a.genres}</td>
             </tr>
           )}
         </tbody>
       </table>
+    
+    <div>
+      <form>
+        {genres.map((genre, index) => {
+          return (
+            <button
+              key={index}
+              name={genre}
+              onClick={event => handleFilter(event, event.target.name)}>
+              {genre}
+            </button>
+          )
+        })}
+        <button onClick={event => handleFilter(event, null)}>
+          all genres
+        </button>
+      </form>
+    </div>
+  
+
+
+
     </div>
   )
 }
