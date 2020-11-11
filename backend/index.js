@@ -6,6 +6,7 @@ const Book = require('./models/book')
 const User = require('./models/user')
 const jwt = require('jsonwebtoken')
 
+
 const JWT_SECRET = 'salasana'
 
 const MONGODB_URI = 'mongodb+srv://fullstack:fullstack@cluster0.93dq6.mongodb.net/library?retryWrites=true&w=majority'
@@ -21,7 +22,6 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true,
   })
 
 const typeDefs = gql`
-
 
 type Book {
   title: String!
@@ -70,7 +70,7 @@ type Mutation {
     username: String!
     password: String!
   ): Token   
-}
+}   
 
 type Query {
   bookCount(author: String): Int!
@@ -79,8 +79,15 @@ type Query {
   allAuthors: [Author!]
   me: User
   }
-`
 
+  type Subscription {
+    bookAdded: Book!
+  }
+
+
+`
+ const { PubSub } = require('apollo-server')
+ const pubsub = new PubSub()
 const resolvers = {
   Query: {
     me: (root, args, context) => { return context.currentUser },
@@ -138,8 +145,7 @@ const resolvers = {
       if (!currentUser) {
         throw new AuthenticationError("not authenticated")
       }
-   
-      
+    
       if (!author) {
         author = new Author({ name: args.author })
 
@@ -158,9 +164,13 @@ const resolvers = {
       } catch (error) {
         throw new UserInputError("Too short book title. Book title minlength 2")
       }
-      return book
 
+     
+      pubsub.publish('BOOK_ADDED', { bookAdded: book })
+      return book
     },
+
+  
     editAuthor: async (root, args, context) => {
       const currentUser = context.currentUser
       if (!currentUser) {
@@ -201,6 +211,12 @@ const resolvers = {
 
       return { value: jwt.sign(userForToken, JWT_SECRET) }
     },
+  },
+
+  Subscription: {
+    bookAdded: {
+      subscribe: () => pubsub.asyncIterator(['BOOK_ADDED'])
+    }
   }
 
 }
@@ -222,6 +238,7 @@ const server = new ApolloServer({
   }
 })
 
-server.listen().then(({ url }) => {
+server.listen().then(({ url, subscriptionsUrl }) => {
   console.log(`Server ready at ${url}`)
+  console.log(`Subscriptions ready at ${subscriptionsUrl}`)
 })
